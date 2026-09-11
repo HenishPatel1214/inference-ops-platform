@@ -33,6 +33,7 @@ services:
       DATABASE_URL: postgresql+psycopg://inference:inference@postgres:5432/inference_ops
       REDIS_URL: redis://redis:6379/0
       ENABLE_SIMULATOR: "true"
+      INFERENCE_UPSTREAM_URL: http://host.docker.internal:11434/v1
     ports:
       - "8000:8000"
     depends_on:

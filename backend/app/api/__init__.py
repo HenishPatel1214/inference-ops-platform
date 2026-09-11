@@ -6,6 +6,7 @@ from app.api import (
     deployments,
     events,
     health,
+    inference,
     nodes,
     requests,
     traffic,
@@ -14,6 +15,7 @@ from app.api import (
 
 api_router = APIRouter()
 api_router.include_router(health.router)
+api_router.include_router(inference.router)
 api_router.include_router(auth.router)
 api_router.include_router(nodes.router)
 api_router.include_router(deployments.router)

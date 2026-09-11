@@ -1,5 +1,6 @@
 from app.schemas.domain import (
     BenchmarkResult,
+    ChatCompletionRequest,
     DeploymentCreate,
     DeploymentRead,
     DeploymentUpdate,
@@ -17,6 +18,7 @@ from app.schemas.domain import (
 
 __all__ = [
     "BenchmarkResult",
+    "ChatCompletionRequest",
     "DeploymentCreate",
     "DeploymentRead",
     "DeploymentUpdate",

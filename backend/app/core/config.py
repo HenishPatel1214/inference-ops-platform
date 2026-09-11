@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     auto_create_tables: bool = True
     enable_simulator: bool = False
     simulator_interval_seconds: float = 1.0
+    inference_upstream_url: str = "http://localhost:11434/v1"
+    inference_upstream_api_key: str = "ollama"
+    inference_upstream_timeout_seconds: float = 120.0
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")

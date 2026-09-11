@@ -142,3 +142,18 @@ class BenchmarkResult(BaseModel):
     p95_ms: float
     p99_ms: float
     elapsed_seconds: float
+
+
+class ChatMessage(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    role: str = Field(min_length=1)
+    content: Any = None
+
+
+class ChatCompletionRequest(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    model: str = Field(min_length=1, max_length=160)
+    messages: list[ChatMessage] = Field(min_length=1)
+    stream: bool = False

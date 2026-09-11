@@ -1,11 +1,13 @@
 # Architecture
 
-`inference-ops-platform` is a production-style local operations dashboard for simulated AI inference workers. It focuses on backend architecture signals: relational modeling, event streams, WebSocket fanout, API design, benchmarkability, and containerized local development.
+`inference-ops-platform` is a production-style local operations dashboard and gateway for real AI inference runtimes. It focuses on backend architecture signals: request proxying, relational telemetry, event streams, WebSocket fanout, API design, benchmarkability, and containerized local development.
 
 ```mermaid
 flowchart LR
     Browser[React TypeScript Dashboard] -->|REST| API[FastAPI API]
     Browser -->|WebSocket /ws/events| WS[WebSocket Fanout]
+    Client[OpenAI-compatible Client] -->|/v1/chat/completions| API
+    API -->|OpenAI-compatible HTTP| Runtime[Ollama or vLLM]
     API --> DB[(PostgreSQL)]
     API --> Redis[(Redis Streams)]
     Worker[Traffic Simulator] --> API
@@ -21,17 +23,19 @@ flowchart LR
 - `app/api`: REST and WebSocket routes grouped by resource.
 - `app/services/event_bus.py`: Redis Streams publisher plus in-process WebSocket broadcast.
 - `app/services/simulator.py`: deterministic demo topology plus randomized inference traffic.
+- `app/services/inference_gateway.py`: outbound client for Ollama, vLLM, or another OpenAI-compatible runtime.
 - `app/services/analytics.py`: overview counts and percentile calculations.
 - `app/observability`: structured logging setup and Prometheus metrics exposed by `app/main.py`.
 
 ## Data flow
 
-1. A client or worker calls `POST /api/traffic/simulate`.
-2. The backend creates inference request rows and latency metric rows in PostgreSQL.
-3. The backend persists a `system_events` row.
-4. The event is appended to the Redis stream `inference.events`.
-5. Connected WebSocket clients receive the event immediately.
-6. The dashboard refreshes aggregates and renders latency/failure views.
+1. An OpenAI-compatible client calls `POST /v1/chat/completions`, or a demo client calls `POST /api/traffic/simulate`.
+2. Real requests are forwarded to the configured inference runtime; simulator requests remain local.
+3. The backend creates inference request rows and latency metric rows in PostgreSQL for successes and failures.
+4. The backend persists a `system_events` row.
+5. The event is appended to the Redis stream `inference.events`.
+6. Connected WebSocket clients receive the event immediately.
+7. The dashboard refreshes aggregates and renders latency/failure views.
 
 ## Tradeoffs
 

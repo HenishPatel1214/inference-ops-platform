@@ -1,6 +1,22 @@
 # API
 
-All `/api/*` endpoints require `Authorization: Bearer dev-token` by default. Health and metrics endpoints are unauthenticated.
+All `/api/*` and `/v1/*` endpoints require `Authorization: Bearer dev-token` by default. Health and metrics endpoints are unauthenticated.
+
+## Real chat completions
+
+`POST /v1/chat/completions` accepts a non-streaming OpenAI-compatible request and forwards it to the runtime configured by `INFERENCE_UPSTREAM_URL`. The response includes an `x-inference-request-id` header that identifies the persisted telemetry row.
+
+```bash
+curl http://localhost:8000/v1/chat/completions \
+  -H "Authorization: Bearer dev-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemma3:4b",
+    "messages": [{"role": "user", "content": "Explain a Kubernetes readiness probe."}]
+  }'
+```
+
+Successful requests persist latency and upstream token usage. Timeouts and connection or upstream errors also create failure rows and events. Streaming requests currently return `400` and are planned as a separate slice.
 
 ## Health
 

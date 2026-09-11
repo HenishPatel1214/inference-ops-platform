@@ -1,6 +1,6 @@
 # Inference Ops Platform
 
-`inference-ops-platform` is a production-style real-time operations dashboard for local and self-hosted AI inference systems. It tracks simulated model requests, p50/p95/p99 latency, failures, system events, model deployments, and inference node health.
+`inference-ops-platform` is a production-style real-time operations dashboard and OpenAI-compatible gateway for local and self-hosted AI inference systems. It proxies real chat completions to Ollama or vLLM while tracking p50/p95/p99 latency, token usage, failures, system events, model deployments, and inference node health. A simulator remains available for repeatable demos.
 
 The project is intentionally backend-heavy: the UI exists to exercise and demonstrate the API, database, Redis Streams, WebSocket, observability, Docker, CI, and benchmark paths.
 
@@ -26,6 +26,8 @@ AI applications are only useful when inference is reliable, observable, and meas
 flowchart LR
     Dashboard[React Dashboard] -->|REST API| FastAPI[FastAPI Backend]
     Dashboard -->|WebSocket| FastAPI
+    Client[OpenAI-compatible Client] -->|POST /v1/chat/completions| FastAPI
+    FastAPI -->|OpenAI-compatible HTTP| Runtime[Ollama or vLLM]
     FastAPI --> Postgres[(PostgreSQL)]
     FastAPI --> Redis[(Redis Streams)]
     Simulator[Traffic Simulator] --> FastAPI
@@ -77,6 +79,26 @@ Local no-Docker URLs:
 
 - Dashboard: http://localhost:5173
 - API docs: http://localhost:8000/docs
+
+### Run real inference with Ollama
+
+Start Ollama and pull a model:
+
+```bash
+ollama serve
+ollama pull gemma3:4b
+```
+
+The gateway defaults to Ollama at `http://localhost:11434/v1`. Send a real completion through the platform:
+
+```bash
+curl http://localhost:8000/v1/chat/completions \
+  -H "Authorization: Bearer dev-token" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gemma3:4b","messages":[{"role":"user","content":"Write a Go health handler."}]}'
+```
+
+The response is passed back in OpenAI format. The platform stores latency, token counts, deployment linkage, and failures, then publishes the request event to Redis and connected WebSocket clients. Set `INFERENCE_UPSTREAM_URL` and `INFERENCE_UPSTREAM_API_KEY` to target any other OpenAI-compatible runtime, including vLLM. Streaming is intentionally deferred to a later vertical slice.
 
 Generate traffic:
 
@@ -249,7 +271,7 @@ pytest
 ruff check app tests scripts
 ```
 
-The test suite covers health checks, token protection, node/deployment APIs, simulated traffic analytics, and a WebSocket event-flow test.
+The test suite covers health checks, token protection, node/deployment APIs, real upstream proxying and failure telemetry, simulated traffic analytics, and WebSocket event flow.
 
 ## CI/CD
 
@@ -265,6 +287,7 @@ Workflow: [.github/workflows/ci.yml](.github/workflows/ci.yml)
 
 ## Roadmap
 
+- Add streaming chat completions with telemetry finalized when the stream closes.
 - Replace demo token auth with JWT/OIDC.
 - Add a real Redis consumer group for multi-worker event processors.
 - Add OpenTelemetry SDK exporters for traces.
