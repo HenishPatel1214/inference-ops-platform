@@ -83,8 +83,12 @@ class InferenceRequestRead(BaseModel):
     id: int
     request_id: str
     model_name: str
+    upstream_model_name: str | None
+    is_streaming: bool
     status: str
     latency_ms: float
+    time_to_first_token_ms: float | None
+    tokens_per_second: float | None
     prompt_tokens: int
     completion_tokens: int
     error_message: str | None
