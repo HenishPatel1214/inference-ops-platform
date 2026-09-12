@@ -4,7 +4,7 @@ All `/api/*` and `/v1/*` endpoints require `Authorization: Bearer dev-token` by 
 
 ## Real chat completions
 
-`POST /v1/chat/completions` accepts a non-streaming OpenAI-compatible request and forwards it to the runtime configured by `INFERENCE_UPSTREAM_URL`. The response includes an `x-inference-request-id` header that identifies the persisted telemetry row.
+`POST /v1/chat/completions` accepts buffered or streaming OpenAI-compatible requests and forwards them to the runtime configured by `INFERENCE_UPSTREAM_URL`. The response includes an `x-inference-request-id` header that identifies the persisted telemetry row.
 
 ```bash
 curl http://localhost:8000/v1/chat/completions \
@@ -12,11 +12,12 @@ curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gemma3:4b",
-    "messages": [{"role": "user", "content": "Explain a Kubernetes readiness probe."}]
+    "messages": [{"role": "user", "content": "Explain a Kubernetes readiness probe."}],
+    "stream": true
   }'
 ```
 
-Successful requests persist latency and upstream token usage. Timeouts and connection or upstream errors also create failure rows and events. Streaming requests currently return `400` and are planned as a separate slice.
+Streaming responses use `text/event-stream` and preserve the upstream `data:` frames. The gateway requests a final usage frame so it can persist prompt/completion tokens and calculate output throughput as completion tokens divided by generation time after the first token. It also records end-to-end latency, time to first token, requested and resolved model names, and any matching deployment/node IDs. An upstream interruption emits a final error data frame and stores a failed request; connection errors before headers retain their normal HTTP error status.
 
 ## Health
 

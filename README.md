@@ -95,10 +95,10 @@ The gateway defaults to Ollama at `http://localhost:11434/v1`. Send a real compl
 curl http://localhost:8000/v1/chat/completions \
   -H "Authorization: Bearer dev-token" \
   -H "Content-Type: application/json" \
-  -d '{"model":"gemma3:4b","messages":[{"role":"user","content":"Write a Go health handler."}]}'
+  -d '{"model":"gemma3:4b","messages":[{"role":"user","content":"Write a Go health handler."}],"stream":true}'
 ```
 
-The response is passed back in OpenAI format. The platform stores latency, token counts, deployment linkage, and failures, then publishes the request event to Redis and connected WebSocket clients. Set `INFERENCE_UPSTREAM_URL` and `INFERENCE_UPSTREAM_API_KEY` to target any other OpenAI-compatible runtime, including vLLM. Streaming is intentionally deferred to a later vertical slice.
+The response is passed back as OpenAI-compatible server-sent events. When the stream closes, the platform stores end-to-end latency, time to first token, output tokens per second, token counts, requested and resolved model names, deployment/node linkage, and failures. It then publishes the request event to Redis and connected WebSocket clients. Set `INFERENCE_UPSTREAM_URL` and `INFERENCE_UPSTREAM_API_KEY` to target any other OpenAI-compatible runtime, including vLLM. Set `"stream": false` for a buffered JSON response.
 
 Generate traffic:
 
@@ -271,7 +271,7 @@ pytest
 ruff check app tests scripts
 ```
 
-The test suite covers health checks, token protection, node/deployment APIs, real upstream proxying and failure telemetry, simulated traffic analytics, and WebSocket event flow.
+The test suite covers health checks, token protection, node/deployment APIs, buffered and streaming upstream proxying, interrupted-stream telemetry, simulated traffic analytics, and WebSocket event flow.
 
 ## CI/CD
 
@@ -287,7 +287,6 @@ Workflow: [.github/workflows/ci.yml](.github/workflows/ci.yml)
 
 ## Roadmap
 
-- Add streaming chat completions with telemetry finalized when the stream closes.
 - Replace demo token auth with JWT/OIDC.
 - Add a real Redis consumer group for multi-worker event processors.
 - Add OpenTelemetry SDK exporters for traces.

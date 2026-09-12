@@ -30,8 +30,8 @@ flowchart LR
 ## Data flow
 
 1. An OpenAI-compatible client calls `POST /v1/chat/completions`, or a demo client calls `POST /api/traffic/simulate`.
-2. Real requests are forwarded to the configured inference runtime; simulator requests remain local.
-3. The backend creates inference request rows and latency metric rows in PostgreSQL for successes and failures.
+2. Real requests are forwarded to the configured inference runtime; streaming responses are relayed as server-sent events while simulator requests remain local.
+3. When a real stream closes, the backend calculates time to first token and output tokens per second, then creates inference request and latency metric rows in PostgreSQL for successes and failures.
 4. The backend persists a `system_events` row.
 5. The event is appended to the Redis stream `inference.events`.
 6. Connected WebSocket clients receive the event immediately.
